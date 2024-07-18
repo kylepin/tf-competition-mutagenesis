@@ -18,10 +18,12 @@ Output files:
 
 Also outputs a chart and MannWhitney U test results in the notebook
 """
-
 import pandas as pd
 from pybedtools import BedTool
 
+
+INPUT_PATH = "./input"
+OUTPUT_PATH = "./intermediate_and_output"
 
 def reverse_complement(sequence):
     complements = {
@@ -40,9 +42,9 @@ def get_mutations_file():
     """
 
     # We begin by setting up data on mutations annotated with MSI vs MSS
-    patient_df = pd.read_csv("TableS1.txt", delimiter="\t")
+    patient_df = pd.read_csv(f"{INPUT_PATH}/TableS1.txt", delimiter="\t")
     patient_df = patient_df[patient_df["Study cohort"] == "WGS"]
-    mutations_df = pd.read_csv("somatic_mutations.txt", delimiter="\t")
+    mutations_df = pd.read_csv(f"{INPUT_PATH}/somatic_mutations.txt", delimiter="\t")
     # include only single nucleotide mutations (df["mutation_type"] == "S"])
     mutations_df = mutations_df[mutations_df["mutation_type"] == "S"]
 
@@ -53,7 +55,7 @@ def get_mutations_file():
     mutations_df.drop(columns=["#sample"], inplace=True)
 
     # generate a file for use downstream
-    mutations_df.to_csv("mutations.bed", sep="\t", index=False, header=False)
+    mutations_df.to_csv(f"{OUTPUT_PATH}/mutations.bed", sep="\t", index=False, header=False)
 
 
 def compute_mutation_counts(prefix, positions=(4, 5), save_to_file=True, insert_missing=True):
@@ -63,7 +65,8 @@ def compute_mutation_counts(prefix, positions=(4, 5), save_to_file=True, insert_
     Result: "{prefix}_mutation_counts.tsv"
     """
     # load the dataframe of mutations within non-exon motif matches
-    df = pd.read_csv(f"{prefix}_matches_mutations.bed", delimiter="\t", header=None)
+    df = pd.read_csv(f"{OUTPUT_PATH}/{prefix}_matches_mutations.bed", delimiter="\t",
+                     header=None)
 
     df.rename(
         columns={0: "chrom", 1: "motif_start", 2: "motif_end", 3: "name", 4: "length", 5: "strand",
@@ -123,7 +126,7 @@ def compute_mutation_counts(prefix, positions=(4, 5), save_to_file=True, insert_
         "count"].sum().reset_index()
 
     if save_to_file:
-        df.to_csv(f"{prefix}_mutation_counts.tsv", sep="\t", index=False, header=True)
+        df.to_csv(f"{OUTPUT_PATH}/{prefix}_mutation_counts.tsv", sep="\t", index=False, header=True)
     else:
         return df
 
@@ -134,7 +137,8 @@ def get_total_core_match_counts(prefix, save_to_file=True):
     aggregating counts for the different values of nn for the same
     suffix.
     """
-    df = pd.read_csv(f"{prefix}_matches_no_exons.bed", delimiter="\t", header=None)
+    df = pd.read_csv(f"{OUTPUT_PATH}/{prefix}_matches_no_exons.bed", delimiter="\t",
+                     header=None)
     df[6] = df[6].str.upper()
 
     # we specifically do not remove non-standard chromosomes
@@ -148,7 +152,7 @@ def get_total_core_match_counts(prefix, save_to_file=True):
     df = df.groupby("suffix")["count"].sum().reset_index()
 
     if save_to_file:
-        df.to_csv(f"{prefix}_match_counts.tsv", sep="\t", index=False, header=True)
+        df.to_csv(f"{OUTPUT_PATH}/{prefix}_match_counts.tsv", sep="\t", index=False, header=True)
 
     else:
         return df
@@ -159,14 +163,14 @@ def compute_control_rates(myc_site_mutations_df):
     console) and create a table that can easily be transformed to be
     simliar to that found in Table S3.
     """
-    ctrl = pd.read_csv(f"myc_control_mutation_counts.tsv", sep="\t")
+    ctrl = pd.read_csv(f"{OUTPUT_PATH}/myc_control_mutation_counts.tsv", sep="\t")
     df = myc_site_mutations_df.merge(
         ctrl, on=["MSI", "suffix", "WT", "mutation", "mutation_pos"])
 
     df = df.rename(columns={"count_x": "myc_mutation_count", "count_y": "myc_match_count",
                             "count": "ctrl_mutation_count"})
 
-    df = df.merge(pd.read_csv(f"myc_control_match_counts.tsv", sep="\t"),
+    df = df.merge(pd.read_csv(f"{OUTPUT_PATH}/myc_control_match_counts.tsv", sep="\t"),
                   on="suffix")
     df = df.rename(columns={"count": "ctrl_match_count"})
     df = df.sort_values(by=["MSI", "facilitated"])
@@ -202,29 +206,31 @@ def main():
         print(prefix)
         # intersect with exons
         BedTool(f"{prefix}_matches.bed").intersect(
-            "new_refseq_exons_171007.bed", v=True, output=f"{prefix}_matches_no_exons.bed")
+            f"{INPUT_PATH}/new_refseq_exons_171007.bed", v=True,
+            output=f"{OUTPUT_PATH}/{prefix}_matches_no_exons.bed")
 
     # intersect MYC binding sites with mutations
-    BedTool(f"{prefix}_matches_no_exons.bed").intersect(BedTool("mutations.bed"), wa=True, wb=True,
-                                  output=f"myc_matches_mutations.bed")
+    BedTool(f"{OUTPUT_PATH}/{prefix}_matches_no_exons.bed").intersect(
+        BedTool(f"{OUTPUT_PATH}/mutations.bed"), wa=True, wb=True,
+        output=f"myc_matches_mutations.bed")
 
     compute_mutation_counts("myc")
     get_total_core_match_counts("myc")
 
     # intersect MYC binding site mutation counts with facilitated/neutral annotation
     # and the MYC binding site match counts
-    mutation_counts = pd.read_csv("myc_mutation_counts.tsv", sep="\t")
-    facilitated_df = pd.read_csv("facilitated_myc_mutations.tsv", sep="\t")
-    myc_matches = pd.read_csv("myc_match_counts.tsv", sep="\t")
+    mutation_counts = pd.read_csv(f"{OUTPUT_PATH}/myc_mutation_counts.tsv", sep="\t")
+    facilitated_df = pd.read_csv(f"{INPUT_PATH}/facilitated_myc_mutations.tsv", sep="\t")
+    myc_matches = pd.read_csv(f"{OUTPUT_PATH}/myc_match_counts.tsv", sep="\t")
     myc_mutation_df = mutation_counts.merge(
         facilitated_df, on=["suffix", "WT", "mutation", "mutation_pos"]).merge(
         myc_matches, on="suffix").groupby(
         ["MSI", "facilitated", "suffix", "WT", "mutation", "mutation_pos"]).sum().reset_index()
 
     # intersect control sites with mutations
-    myc_control_matches = BedTool("myc_control_matches_no_exons.bed")
-    myc_control_matches.intersect(BedTool("mutations.bed"), wa=True, wb=True,
-                                  output=f"myc_control_matches_mutations.bed")
+    myc_control_matches = BedTool(f"{OUTPUT_PATH}/myc_control_matches_no_exons.bed")
+    myc_control_matches.intersect(BedTool(f"{OUTPUT_PATH}/mutations.bed"), wa=True, wb=True,
+                                  output=f"{OUTPUT_PATH}/myc_control_matches_mutations.bed")
 
     compute_mutation_counts(f"myc_control")
     get_total_core_match_counts(f"myc_control")
