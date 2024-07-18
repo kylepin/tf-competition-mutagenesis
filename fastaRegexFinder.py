@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """
-THIS WAS RETRIEVED FROM: https://raw.githubusercontent.com/dariober/bioinformatics-cafe/master/fastaRegexFinder/fastaRegexFinder.py
 THIS WAS NOT PRODUCED BY THE AUTHOR OF THIS PAPER. IT WAS ADJUSTED FOR OUR PURPOSES.
-"""
-
+From: https://raw.githubusercontent.com/dariober/bioinformatics-cafe/master/fastaRegexFinder/fastaRegexFinder.py"""
 import re
 import sys
 import string
@@ -239,18 +237,19 @@ while True:
     ref_seq= ''.join(ref_seq)
     if args.seqnames == [None] or chr in args.seqnames:
         for m in re.finditer(psq_re_f, ref_seq):
-            matchstr= trimMatch(m.group(0), args.maxstr)
-            quad_id= chr + '_' + str(m.start()) + '_' + str(m.end()) + '_for'
-            gquad_list.append([chr, m.start(), m.end(), quad_id, len(m.group(0)), '+', matchstr])
+            matchstr= trimMatch(m.group(1), args.maxstr)
+            quad_id= chr + '_' + str(m.start()) + '_' + str(m.start()+len(m.group(1))) + '_for'
+            gquad_list.append([chr, m.start(), m.start()+len(m.group(1)), quad_id, len(m.group(1)),
+                               '+', matchstr])
         if args.noreverse is False:
             ref_seq= revcomp(ref_seq)
             seqlen= len(ref_seq)
             for m in re.finditer(psq_re_f, ref_seq):
-                matchstr= trimMatch(revcomp(m.group(0)), args.maxstr)
-                mstart= seqlen - m.end()
+                matchstr= trimMatch(revcomp(m.group(1)), args.maxstr)
                 mend= seqlen - m.start()
+                mstart= mend - len(m.group(1))
                 quad_id= chr + '_' + str(mstart) + '_' + str(mend) + '_rev'
-                gquad_list.append([chr, mstart, mend, quad_id, len(m.group(0)), '-', matchstr])
+                gquad_list.append([chr, mstart, mend, quad_id, len(m.group(1)), '-', matchstr])
         gquad_sorted= sort_table(gquad_list, (1,2,3))
         gquad_list= []
         for xline in gquad_sorted:
