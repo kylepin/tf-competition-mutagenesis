@@ -25,6 +25,7 @@ from pybedtools import BedTool
 INPUT_PATH = "./input"
 OUTPUT_PATH = "./intermediate_and_output"
 
+
 def reverse_complement(sequence):
     complements = {
         "A": "T",
@@ -175,7 +176,8 @@ def compute_control_rates(myc_site_mutations_df):
     df = df.rename(columns={"count": "ctrl_match_count"})
     df = df.sort_values(by=["MSI", "facilitated"])
     # prior to computing control rate, output the table so it can be transformed to Table S3
-    df.to_csv(f"myc_control_mutation_counts_table.tsv", sep="\t", index=False, header=True)
+    df.to_csv(f"{OUTPUT_PATH}/myc_control_mutation_counts_table.tsv", sep="\t", index=False,
+              header=True)
 
     # multiply control site mutation counts by ratio of control sites to MYC binding sites
     # (per suffix)
@@ -205,14 +207,14 @@ def main():
     for prefix in ("myc", "myc_control"):
         print(prefix)
         # intersect with exons
-        BedTool(f"{prefix}_matches.bed").intersect(
+        BedTool(f"{OUTPUT_PATH}/{prefix}_matches.bed").intersect(
             f"{INPUT_PATH}/new_refseq_exons_171007.bed", v=True,
             output=f"{OUTPUT_PATH}/{prefix}_matches_no_exons.bed")
 
     # intersect MYC binding sites with mutations
     BedTool(f"{OUTPUT_PATH}/{prefix}_matches_no_exons.bed").intersect(
         BedTool(f"{OUTPUT_PATH}/mutations.bed"), wa=True, wb=True,
-        output=f"myc_matches_mutations.bed")
+        output=f"{OUTPUT_PATH}/myc_matches_mutations.bed")
 
     compute_mutation_counts("myc")
     get_total_core_match_counts("myc")

@@ -120,10 +120,11 @@ def main():
                 output=f)
 
         # concatenate the sampled files for each of the 4 suffixes
-        with open(f"myc_control_sample_{sample_num}_matches_no_exons.bed", "w") as fout:
+        f = f"{OUTPUT_PATH}/myc_control_sample_{sample_num}_matches_no_exons.bed"
+        with open(f, "w") as fout:
             for suffix in ["CATG", "CGCG", "CGAG", "CGTG"]:
                 f = f"{OUTPUT_PATH}/myc_control_sample_{sample_num}_matches_nn{suffix}_sampled.bed"
-                with open(f) as fin:
+                with open(f, "r") as fin:
                     fout.write(fin.read())
 
         # then do all the mutation count analysis using the sample control site set
@@ -133,8 +134,8 @@ def main():
             BedTool(f"{OUTPUT_PATH}/mutations.bed"), wa=True, wb=True,
             output=f"{OUTPUT_PATH}/myc_control_sample_{sample_num}_matches_mutations.bed")
 
-        compute_mutation_counts(f"{OUTPUT_PATH}/myc_control_sample_{sample_num}")
-        get_total_core_match_counts(f"{OUTPUT_PATH}/myc_control_sample_{sample_num}")
+        compute_mutation_counts(f"myc_control_sample_{sample_num}")
+        get_total_core_match_counts(f"myc_control_sample_{sample_num}")
 
         # now compute the CTRL rates for MSS/MSI Myc-neutral/-facilitated
         compute_control_rates(myc_mutation_df, sample_num)
