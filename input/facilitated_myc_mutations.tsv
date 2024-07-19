@@ -1,0 +1,16 @@
+suffix	WT	mutation	mutation_pos	facilitated
+CATG	A	C	4	0
+CATG	A	G	4	0
+CATG	A	T	4	0
+CGAG	A	C	5	0
+CGAG	A	G	5	0
+CGAG	A	T	5	0
+CGCG	C	A	5	0
+CGCG	C	G	5	0
+CGCG	C	T	5	1
+CGTG	G	A	4	0
+CGTG	G	C	4	0
+CGTG	G	T	4	0
+CGTG	T	A	5	0
+CGTG	T	C	5	1
+CGTG	T	G	5	0
