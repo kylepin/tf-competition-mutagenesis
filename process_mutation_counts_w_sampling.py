@@ -13,14 +13,12 @@ Input files from external sources:
 - facilitated_myc_mutations.tsv (already included)
 
 Input files from other scripts from this repository:
-- *Many* Just make sure to run `process_mutation_counts.py` first
+- *Many*. `process_mutation_counts.py` should be run before running
+    this file.
 
 Output files:
-- myc_control_sample_{i}_nnCGTG_methylation_values.bed for i in 1,2..10
-- myc_control_methylation_values.bed
-- myc_methylation_values.bed
-
-Also outputs a chart and MannWhitney U test results in the notebook
+- myc_control_sample_{i}_mutation_counts.tsv for i in 1,2..10
+- myc_control_sample{i}_counts_table.tsv for i in 1,2..10
 """
 import pandas as pd
 from pybedtools import BedTool

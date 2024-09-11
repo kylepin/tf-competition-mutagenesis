@@ -4,19 +4,24 @@
 Input files from external sources:
 - hg19.fa
 - new_refseq_exons_171007.bed
-    file of exons to exclude
+    file of exons to exclude (from O'Leary, N.A., et al., Reference sequence (RefSeq)
+    database at NCBI: current status, taxonomic expansion, and functional annotation.
+    Nucleic Acids Res, 2016. 44(D1): p. D733-45.)
+- somatic_mutations.txt
+    mutation dataset originally retrieved (on 10/8/2022) from
+    http://web.hku.hk/~suetyi/ (linked from
+    https://www.nature.com/articles/ng.2983)
 - TableS1.txt
     patient data for the mutation data (includes needed info on MSI/MSS status)
-- somatic_mutations.txt
-    mutation dataset
-- facilitated_myc_mutations.tsv (already included)
+    retrieved from TableS1 in the Supplementary data of
+    https://www.nature.com/articles/ng.2983
+- facilitated_myc_mutations.tsv (already included in repository)
+    a TSV for annotating various mismatch-position pairs as facilitated or neutral
+    based on our experimental evidence.
 
 Output files:
-- myc_control_sample_{i}_nnCGTG_methylation_values.bed for i in 1,2..10
-- myc_control_methylation_values.bed
-- myc_methylation_values.bed
-
-Also outputs a chart and MannWhitney U test results in the notebook
+- myc_control_mutation_counts_table.tsv
+- myc_mutation_counts.tsv
 """
 import pandas as pd
 from pybedtools import BedTool
@@ -41,7 +46,6 @@ def get_mutations_file():
     """Load the mutation dataset and join with the patient data
     for the MSS/MSI annotations.
     """
-
     # We begin by setting up data on mutations annotated with MSI vs MSS
     patient_df = pd.read_csv(f"{INPUT_PATH}/TableS1.txt", delimiter="\t")
     patient_df = patient_df[patient_df["Study cohort"] == "WGS"]
